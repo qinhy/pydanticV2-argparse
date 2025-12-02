@@ -11,7 +11,11 @@ dynamically generated validators and environment variable parsers.
 import contextlib
 
 # Third-Party
-import pydantic.v1 as pydantic
+import pydantic
+from pydantic_settings import BaseSettings
+
+# Local
+from . import types
 
 # Typing
 from typing import Any, Callable, Dict, Optional, Type, TypeVar, Union
@@ -24,7 +28,7 @@ PydanticValidator = classmethod
 
 
 def as_validator(
-    field: pydantic.fields.ModelField,
+    field: pydantic.fields.FieldInfo,
     caster: Callable[[str], Any],
 ) -> PydanticValidator:
     """Shortcut to wrap a caster and construct a validator for a given field.
@@ -36,22 +40,23 @@ def as_validator(
     validator will also cast empty strings to `None`.
 
     Args:
-        field (pydantic.fields.ModelField): Field to construct validator for.
+        field (pydantic.fields.FieldInfo): Field to construct validator for.
         caster (Callable[[str], Any]): String to field type caster function.
 
     Returns:
         PydanticValidator: Constructed field validator function.
     """
+    field_name = field.name or field.alias
 
-    # Dynamically construct a `pydantic` validator function for the supplied
-    # field. The constructed validator must be `pre=True` so that the validator
+    # Dynamically construct a `pydantic` field_validator function for the supplied
+    # field. The constructed field_validator must be `pre=True` so that the field_validator
     # is called before the built-in `pydantic` field validation occurs and is
-    # provided with the raw input data. The constructed validator must also be
-    # `allow_reuse=True` so the `__validator` function name can be reused
-    # multiple times when being decorated as a `pydantic` validator. Note that
-    # despite the `__validator` function *name* being reused, each instance of
-    # the validator function is uniquely constructed for the supplied field.
-    @pydantic.validator(field.name, pre=True, allow_reuse=True)
+    # provided with the raw input data. The constructed field_validator must also be
+    # `allow_reuse=True` so the `__field_validator` function name can be reused
+    # multiple times when being decorated as a `pydantic` field_validator. Note that
+    # despite the `field_validator` function *name* being reused, each instance of
+    # the field_validator function is uniquely constructed for the supplied field.
+    @pydantic.field_validator(field_name,  mode="before")
     def __validator(cls: Type[Any], value: T) -> Union[T, None, Any]:
         if not isinstance(value, str):
             return value
@@ -65,7 +70,7 @@ def as_validator(
     # Rename the validator uniquely for this field to avoid any collisions. The
     # leading `__` and prefix of `pydanticV2_argparse` should guard against any
     # potential collisions with user defined validators.
-    __validator.__name__ = f"__pydanticV2_argparse_{field.name}"
+    __validator.__name__ = f"__pydanticV2_argparse_{field_name}"
 
     # Return the constructed validator
     return __validator
@@ -96,7 +101,7 @@ def model_with_validators(
 ) -> Type[PydanticModelT]:
     """Generates a new `pydantic` model class with the supplied validators.
 
-    If the supplied base model is a subclass of `pydantic.BaseSettings`, then
+    If the supplied base model is a subclass of `pydantic_settings.BaseSettings`, then
     the newly generated model will also have a new `parse_env_var` classmethod
     monkeypatched onto it that suppresses any exceptions raised when initially
     parsing the environment variables. This allows the raw values to still be
@@ -117,21 +122,21 @@ def model_with_validators(
     )
 
     # Check if the model is a `BaseSettings`
-    if issubclass(model, pydantic.BaseSettings):
-        # Hold a reference to the current `parse_env_var` classmethod
-        parse_env_var = model.__config__.parse_env_var
+    # if issubclass(model, BaseSettings):
+    #     # Hold a reference to the current `parse_env_var` classmethod
+    #     parse_env_var = model.__config__.parse_env_var
 
-        # Construct a new `parse_env_var` function which suppresses exceptions
-        # raised by the current `parse_env_var` classmethod. This allows the
-        # raw values to be passed through to the `pydantic` field validator
-        # methods if they cannot be parsed initially.
-        def __parse_env_var(field_name: str, raw_val: str) -> Any:
-            with contextlib.suppress(Exception):
-                return parse_env_var(field_name, raw_val)
-            return raw_val
+    #     # Construct a new `parse_env_var` function which suppresses exceptions
+    #     # raised by the current `parse_env_var` classmethod. This allows the
+    #     # raw values to be passed through to the `pydantic` field validator
+    #     # methods if they cannot be parsed initially.
+    #     def __parse_env_var(field_name: str, raw_val: str) -> Any:
+    #         with contextlib.suppress(Exception):
+    #             return parse_env_var(field_name, raw_val)
+    #         return raw_val
 
-        # Monkeypatch `parse_env_var`
-        model.__config__.parse_env_var = __parse_env_var  # type: ignore[method-assign]
+    #     # Monkeypatch `parse_env_var`
+    #     model.__config__.parse_env_var = __parse_env_var  # type: ignore[method-assign]
 
     # Return Constructed Model
     return model

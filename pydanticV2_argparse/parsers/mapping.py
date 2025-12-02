@@ -13,7 +13,7 @@ import ast
 import collections.abc
 
 # Third-Party
-import pydantic.v1 as pydantic
+import pydantic
 
 # Typing
 from typing import Optional
@@ -22,11 +22,11 @@ from typing import Optional
 from .. import utils
 
 
-def should_parse(field: pydantic.fields.ModelField) -> bool:
+def should_parse(field: pydantic.fields.FieldInfo) -> bool:
     """Checks whether the field should be parsed as a `mapping`.
 
     Args:
-        field (pydantic.fields.ModelField): Field to check.
+        field (pydantic.fields.FieldInfo): Field to check.
 
     Returns:
         bool: Whether the field should be parsed as a `mapping`.
@@ -37,25 +37,27 @@ def should_parse(field: pydantic.fields.ModelField) -> bool:
 
 def parse_field(
     parser: argparse.ArgumentParser,
-    field: pydantic.fields.ModelField,
+    field: pydantic.fields.FieldInfo,
 ) -> Optional[utils.pydantic.PydanticValidator]:
     """Adds mapping pydantic field to argument parser.
 
     Args:
         parser (argparse.ArgumentParser): Argument parser to add to.
-        field (pydantic.fields.ModelField): Field to be added to parser.
+        field (pydantic.fields.FieldInfo): Field to be added to parser.
 
     Returns:
         Optional[utils.pydantic.PydanticValidator]: Possible validator method.
     """
     # Add Mapping Field
+    name = utils.arguments.name(field)
+    alias = field.alias or name
     parser.add_argument(
-        utils.arguments.name(field),
+        name,
         action=argparse._StoreAction,
         help=utils.arguments.description(field),
-        dest=field.alias,
-        metavar=field.alias.upper(),
-        required=bool(field.required),
+        dest=alias,
+        metavar=alias.upper(),
+        required=bool(field.is_required()),
     )
 
     # Construct and Return Validator

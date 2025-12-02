@@ -113,9 +113,9 @@ class Arguments(BaseModel):
 
 ## Environment Variables
 Functionality to parse both required and optional arguments from environment
-variables is provided via the `pydantic.BaseSettings` base class.
+variables is provided via the `pydantic_settings.BaseSettings` base class.
 
-Simply inherit from `pydantic.BaseSettings` instead of `pydantic.BaseModel`:
+Simply inherit from `pydantic_settings.BaseSettings` instead of `pydantic.BaseModel`:
 
 ```python
 class Arguments(BaseSettings):
@@ -219,7 +219,7 @@ usual by the built-in `pydantic` field validation for their respective types.
     the user's custom validators or the built-in `pydantic` field validation.
 
     As a solution, `pydanticV2-argparse` wraps the existing
-    `pydantic.BaseSettings.parse_env_var()` environment variable parsing class
+    `pydantic_settings.BaseSettings.parse_env_var()` environment variable parsing class
     method to handle this situation. The wrapped parser passes through raw
     `str` values *unchanged* if the `json` parsing fails. This allows the raw
     string values to be parsed, validated and handled by the generated

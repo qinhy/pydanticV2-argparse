@@ -6,14 +6,16 @@ Validation Errors to human readable messages.
 
 
 # Third-Party
-import pydantic.v1 as pydantic
+import pydantic
+from pydantic_settings import SettingsError
 
 # Typing
 from typing import Union
 
 
+
 # Constants
-PydanticError = Union[pydantic.ValidationError, pydantic.env_settings.SettingsError]
+PydanticError = Union[pydantic.ValidationError, SettingsError]
 
 
 def format(error: PydanticError) -> str:  # noqa: A001

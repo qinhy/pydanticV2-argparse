@@ -10,22 +10,34 @@ command-line arguments.
 # Standard
 import argparse
 import enum
+from types import NoneType
 
 # Third-Party
-import pydantic.v1 as pydantic
+import pydantic
 
 # Local
 from .. import utils
 
 # Typing
-from typing import Optional, Type
+from typing import Any, Optional, Type, Union, get_args, get_origin
 
 
-def should_parse(field: pydantic.fields.ModelField) -> bool:
+def allows_none(field: Any) -> bool:
+    """Determine if a field allows None."""
+    ann = getattr(field, "annotation", None)
+    if ann is None: return False
+    # Unwrap Annotated[...] if you use it
+    origin = get_origin(ann)
+    if origin is Union:
+        return any(arg is NoneType for arg in get_args(ann))
+    return ann is NoneType
+
+
+def should_parse(field: pydantic.fields.FieldInfo) -> bool:
     """Checks whether the field should be parsed as an `enum`.
 
     Args:
-        field (pydantic.fields.ModelField): Field to check.
+        field (pydantic.fields.FieldInfo): Field to check.
 
     Returns:
         bool: Whether the field should be parsed as an `enum`.
@@ -36,23 +48,23 @@ def should_parse(field: pydantic.fields.ModelField) -> bool:
 
 def parse_field(
     parser: argparse.ArgumentParser,
-    field: pydantic.fields.ModelField,
+    field: pydantic.fields.FieldInfo,
 ) -> Optional[utils.pydantic.PydanticValidator]:
     """Adds enum pydantic field to argument parser.
 
     Args:
         parser (argparse.ArgumentParser): Argument parser to add to.
-        field (pydantic.fields.ModelField): Field to be added to parser.
+        field (pydantic.fields.FieldInfo): Field to be added to parser.
 
     Returns:
         Optional[utils.pydantic.PydanticValidator]: Possible validator method.
     """
     # Extract Enum
-    enum_type: Type[enum.Enum] = field.outer_type_
+    enum_type: Type[enum.Enum] = field.annotation
 
     # Compute Argument Intrinsics
-    is_flag = len(enum_type) == 1 and not bool(field.required)
-    is_inverted = is_flag and field.get_default() is not None and field.allow_none
+    is_flag = len(enum_type) == 1 and not bool(field.is_required())
+    is_inverted = is_flag and field.get_default() is not None and allows_none(field)
 
     # Determine Argument Properties
     metavar = f"{{{', '.join(e.name for e in enum_type)}}}"
@@ -65,13 +77,15 @@ def parse_field(
     )
 
     # Add Enum Field
+    name = utils.arguments.name(field)
+    alias = field.alias or name
     parser.add_argument(
-        utils.arguments.name(field, is_inverted),
+        name,
         action=action,
         help=utils.arguments.description(field),
-        dest=field.alias,
+        dest=alias,
         metavar=metavar,
-        required=bool(field.required),
+        required=bool(field.is_required()),
         **const,  # type: ignore[arg-type]
     )
 

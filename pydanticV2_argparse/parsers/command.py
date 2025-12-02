@@ -11,7 +11,7 @@ sub-commands.
 import argparse
 
 # Third-Party
-import pydantic.v1 as pydantic
+import pydantic
 
 # Typing
 from typing import Optional
@@ -20,11 +20,11 @@ from typing import Optional
 from .. import utils
 
 
-def should_parse(field: pydantic.fields.ModelField) -> bool:
+def should_parse(field: pydantic.fields.FieldInfo) -> bool:
     """Checks whether the field should be parsed as a `command`.
 
     Args:
-        field (pydantic.fields.ModelField): Field to check.
+        field (pydantic.fields.FieldInfo): Field to check.
 
     Returns:
         bool: Whether the field should be parsed as a `command`.
@@ -35,13 +35,13 @@ def should_parse(field: pydantic.fields.ModelField) -> bool:
 
 def parse_field(
     subparser: argparse._SubParsersAction,
-    field: pydantic.fields.ModelField,
+    field: pydantic.fields.FieldInfo,
 ) -> Optional[utils.pydantic.PydanticValidator]:
     """Adds command pydantic field to argument parser.
 
     Args:
         subparser (argparse._SubParsersAction): Sub-parser to add to.
-        field (pydantic.fields.ModelField): Field to be added to parser.
+        field (pydantic.fields.FieldInfo): Field to be added to parser.
 
     Returns:
         Optional[utils.pydantic.PydanticValidator]: Possible validator method.
@@ -49,8 +49,8 @@ def parse_field(
     # Add Command
     subparser.add_parser(
         field.alias,
-        help=field.field_info.description,
-        model=field.outer_type_,  # type: ignore[call-arg]
+        help=field.description,
+        model=field.annotation,  # type: ignore[call-arg]
         exit_on_error=False,  # Allow top level parser to handle exiting
     )
 

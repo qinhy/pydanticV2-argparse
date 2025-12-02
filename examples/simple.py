@@ -3,7 +3,7 @@
 
 # Third-Party
 try:
-    import pydantic.v1 as pydantic
+    import pydantic
 except ImportError:
     import pydantic
 import pydanticV2_argparse

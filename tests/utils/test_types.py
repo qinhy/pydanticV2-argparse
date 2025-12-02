@@ -13,7 +13,7 @@ import sys
 
 # Third-Party
 import pytest
-import pydantic.v1 as pydantic
+import pydantic
 
 
 # Local
@@ -81,7 +81,7 @@ def test_is_field_a(field_type: Any, expected_type: Any) -> None:
         expected_type (Any): Expected type to check for the field.
     """
     # Construct Pydantic Field
-    field = conf.create_test_field(type=field_type)
+    field = conf.create_test_field(type_=field_type)
 
     # Check and Assert Field Type
     assert utils.types.is_field_a(field, expected_type)

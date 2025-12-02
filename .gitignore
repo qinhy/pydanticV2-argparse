@@ -83,3 +83,4 @@ dmypy.json
 # Misc
 /TODO.md
 Dockerfile
+uv.lock

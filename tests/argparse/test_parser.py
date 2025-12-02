@@ -16,7 +16,7 @@ import textwrap
 
 # Third-Party
 import pytest
-import pydantic.v1 as pydantic
+import pydantic
 
 # Local
 import pydanticV2_argparse
@@ -27,13 +27,35 @@ from typing import Deque, Dict, FrozenSet, List, Optional, Set, Tuple, Type, Typ
 
 # Version-Guarded
 if sys.version_info < (3, 8):  # pragma: <3.8 cover
-    from typing_extensions import Literal
+    from typing_extensions import Literal, get_args, get_origin
 else:  # pragma: >=3.8 cover
-    from typing import Literal
+    from typing import Literal, get_args, get_origin
 
 
 # Constants
 ArgumentT = TypeVar("ArgumentT")
+
+
+def _annotation_is_model(annotation: object) -> bool:
+    """Return True when the annotation represents a pydantic BaseModel."""
+    if isinstance(annotation, type) and issubclass(annotation, pydantic.BaseModel):
+        return True
+
+    origin = get_origin(annotation)
+    if origin is None:
+        return False
+
+    return any(
+        isinstance(arg, type) and issubclass(arg, pydantic.BaseModel)
+        for arg in get_args(annotation)
+    )
+
+
+def _field_default(field: pydantic.fields.FieldInfo) -> object:
+    """Return a field's default value, calling a default_factory when present."""
+    if field.default_factory is not None:
+        return field.default_factory()
+    return field.default
 
 
 @pytest.mark.parametrize("prog",          ["AA", None])
@@ -472,20 +494,22 @@ def test_version_message(capsys: pytest.CaptureFixture[str]) -> None:
         "argument_name",
         "argument_field",
     ),
-    conf.TestModel.__fields__.items()
+    conf.TestModel.model_fields.items()
 )
 def test_argument_descriptions(
     argument_name: str,
-    argument_field: pydantic.fields.ModelField,
+    argument_field: pydantic.fields.FieldInfo,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     """Tests Argument Descriptions.
 
     Args:
         argument_name (str): Argument name.
-        argument_field (pydantic.fields.ModelField): Argument pydantic field.
+        argument_field (pydantic.fields.FieldInfo): Argument pydantic field.
         capsys (pytest.CaptureFixture[str]): Fixture to capture STDOUT/STDERR.
     """
+    description = argument_field.description or ""
+
     # Create ArgumentParser
     parser = pydanticV2_argparse.ArgumentParser(conf.TestModel)
 
@@ -504,18 +528,18 @@ def test_argument_descriptions(
     _, commands, required, optional, _ = re.split(r".+:\n", captured.out)
 
     # Check if Command, Required or Optional
-    if isinstance(argument_field.outer_type_, pydantic.main.ModelMetaclass):
+    if _annotation_is_model(argument_field.annotation):
         # Assert Argument Name in Commands Section
         assert argument_name in commands
         assert argument_name not in required
         assert argument_name not in optional
 
         # Assert Argument Description in Commands Section
-        assert argument_field.field_info.description in commands
-        assert argument_field.field_info.description not in required
-        assert argument_field.field_info.description not in optional
+        assert description in commands
+        assert description not in required
+        assert description not in optional
 
-    elif argument_field.required:
+    elif argument_field.is_required():
         # Format Argument Name
         argument_name = argument_name.replace("_", "-")
 
@@ -525,14 +549,14 @@ def test_argument_descriptions(
         assert argument_name not in optional
 
         # Assert Argument Description in Required Args Section
-        assert argument_field.field_info.description in required
-        assert argument_field.field_info.description not in commands
-        assert argument_field.field_info.description not in optional
+        assert description in required
+        assert description not in commands
+        assert description not in optional
 
     else:
         # Format Argument Name and Default
         argument_name = argument_name.replace("_", "-")
-        default = f"(default: {argument_field.get_default()})"
+        default = f"(default: {_field_default(argument_field)})"
 
         # Assert Argument Name in Optional Args Section
         assert argument_name in optional
@@ -540,9 +564,9 @@ def test_argument_descriptions(
         assert argument_name not in required
 
         # Assert Argument Description in Optional Args Section
-        assert argument_field.field_info.description in optional
-        assert argument_field.field_info.description not in commands
-        assert argument_field.field_info.description not in required
+        assert description in optional
+        assert description not in commands
+        assert description not in required
 
         # Assert Argument Default in Optional Args Section
         assert default in optional

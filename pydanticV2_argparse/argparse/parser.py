@@ -20,7 +20,8 @@ import argparse
 import sys
 
 # Third-Party
-import pydantic.v1 as pydantic
+import pydantic
+from pydantic_settings import BaseSettings, SettingsError
 
 # Local
 from .. import parsers
@@ -132,6 +133,7 @@ class ArgumentParser(argparse.ArgumentParser, Generic[PydanticModelT]):
     def parse_typed_args(
         self,
         args: Optional[List[str]] = None,
+        namespace: Optional[argparse.Namespace] = None,
     ) -> PydanticModelT:
         """Parses command line arguments.
 
@@ -148,18 +150,24 @@ class ArgumentParser(argparse.ArgumentParser, Generic[PydanticModelT]):
             argparse.ArgumentError: Raised upon error, if not exiting on error.
             SystemExit: Raised upon error, if exiting on error.
         """
+        
+        # First, let argparse parse CLI args. Right now there are no
+        # user-defined arguments, so this effectively just handles -h/--help
+        # and basic error reporting.
         # Call Super Class Method
-        namespace = self.parse_args(args)
+        namespace = self.parse_args(args,namespace)
 
         # Convert Namespace to Dictionary
         arguments = utils.namespaces.to_dict(namespace)
 
         # Handle Possible Validation Errors
         try:
-            # Convert Namespace to Pydantic Model
-            model = self.model.parse_obj(arguments)
+            # Convert Namespace to Pydantic Model            
+            if issubclass(self.model, BaseSettings):
+                arguments.update(_env_parse_none_str="")
+            model = self.model(**arguments)
 
-        except (pydantic.ValidationError, pydantic.env_settings.SettingsError) as exc:
+        except (pydantic.ValidationError, SettingsError) as exc:
             # Catch exceptions, and use the ArgumentParser.error() method
             # to report it to the user
             self.error(utils.errors.format(exc))
@@ -276,7 +284,10 @@ class ArgumentParser(argparse.ArgumentParser, Generic[PydanticModelT]):
         validators: Dict[str, utils.pydantic.PydanticValidator] = {}
 
         # Loop through fields in model
-        for field in model.__fields__.values():
+        for name, field in utils.types.get_model_fields(model).items():
+            # Normalise fields so they expose a consistent interface across
+            # Pydantic versions.
+            field = utils.types.ensure_model_field(name, field)
             # Add field
             validator = self._add_field(field)
 
@@ -287,12 +298,12 @@ class ArgumentParser(argparse.ArgumentParser, Generic[PydanticModelT]):
         return utils.pydantic.model_with_validators(model, validators)
 
     def _add_field(
-        self, field: pydantic.fields.ModelField
+        self, field: pydantic.fields.FieldInfo
     ) -> Optional[utils.pydantic.PydanticValidator]:
         """Adds `pydantic` field to argument parser.
 
         Args:
-            field (pydantic.fields.ModelField): Field to be added to parser.
+            field (pydantic.fields.FieldInfo): Field to be added to parser.
 
         Returns:
             Optional[utils.pydantic.PydanticValidator]: Possible validator.

@@ -6,13 +6,13 @@ names and formatting argument descriptions.
 
 
 # Third-Party
-import pydantic.v1 as pydantic
+import pydantic
 
-def name(field: pydantic.fields.ModelField, invert: bool = False) -> str:
+def name(field: pydantic.fields.FieldInfo, invert: bool = False) -> str:
     """Standardises argument name.
 
     Args:
-        field (pydantic.fields.ModelField): Field to construct name for.
+        field (pydantic.fields.FieldInfo): Field to construct name for.
         invert (bool): Whether to invert the name by prepending `--no-`.
 
     Returns:
@@ -20,22 +20,23 @@ def name(field: pydantic.fields.ModelField, invert: bool = False) -> str:
     """
     # Construct Prefix
     prefix = "--no-" if invert else "--"
-
+    alias = field.alias
+    alias = '' if alias is None else alias
     # Prepend prefix, replace '_' with '-'
-    return f"{prefix}{field.alias.replace('_', '-')}"
+    return f"{prefix}{alias.replace('_', '-')}"
 
 
-def description(field: pydantic.fields.ModelField) -> str:
+def description(field: pydantic.fields.FieldInfo) -> str:
     """Standardises argument description.
 
     Args:
-        field (pydantic.fields.ModelField): Field to construct description for.
+        field (pydantic.fields.FieldInfo): Field to construct description for.
 
     Returns:
         str: Standardised description of the argument.
     """
     # Construct Default String
-    default = f"(default: {field.get_default()})" if not field.required else None
+    default = f"(default: {field.get_default()})" if not field.is_required() else None
 
     # Return Standardised Description String
-    return " ".join(filter(None, [field.field_info.description, default]))
+    return " ".join(filter(None, [field.description, default]))

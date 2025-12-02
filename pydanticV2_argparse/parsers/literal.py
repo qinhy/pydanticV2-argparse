@@ -10,15 +10,16 @@ command-line arguments.
 # Standard
 import argparse
 import sys
+from types import NoneType
 
 # Third-Party
-import pydantic.v1 as pydantic
+import pydantic
 
 # Local
 from .. import utils
 
 # Typing
-from typing import Optional
+from typing import Any, Optional, Union, get_origin
 
 # Version-Guarded
 if sys.version_info < (3, 8):  # pragma: <3.8 cover
@@ -26,12 +27,21 @@ if sys.version_info < (3, 8):  # pragma: <3.8 cover
 else:  # pragma: >=3.8 cover
     from typing import Literal, get_args
 
+def allows_none(field: Any) -> bool:
+    """Determine if a field allows None."""
+    ann = getattr(field, "annotation", None)
+    if ann is None: return False
+    # Unwrap Annotated[...] if you use it
+    origin = get_origin(ann)
+    if origin is Union:
+        return any(arg is NoneType for arg in get_args(ann))
+    return ann is NoneType
 
-def should_parse(field: pydantic.fields.ModelField) -> bool:
+def should_parse(field: pydantic.fields.FieldInfo) -> bool:
     """Checks whether the field should be parsed as a `literal`.
 
     Args:
-        field (pydantic.fields.ModelField): Field to check.
+        field (pydantic.fields.FieldInfo): Field to check.
 
     Returns:
         bool: Whether the field should be parsed as a `literal`.
@@ -42,23 +52,23 @@ def should_parse(field: pydantic.fields.ModelField) -> bool:
 
 def parse_field(
     parser: argparse.ArgumentParser,
-    field: pydantic.fields.ModelField,
+    field: pydantic.fields.FieldInfo,
 ) -> Optional[utils.pydantic.PydanticValidator]:
     """Adds enum pydantic field to argument parser.
 
     Args:
         parser (argparse.ArgumentParser): Argument parser to add to.
-        field (pydantic.fields.ModelField): Field to be added to parser.
+        field (pydantic.fields.FieldInfo): Field to be added to parser.
 
     Returns:
         Optional[utils.pydantic.PydanticValidator]: Possible validator method.
     """
     # Extract Choices
-    choices = get_args(field.outer_type_)
+    choices = get_args(field.annotation)
 
     # Compute Argument Intrinsics
-    is_flag = len(choices) == 1 and not bool(field.required)
-    is_inverted = is_flag and field.get_default() is not None and field.allow_none
+    is_flag = len(choices) == 1 and not bool(field.is_required())
+    is_inverted = is_flag and field.get_default() is not None and allows_none(field)
 
     # Determine Argument Properties
     metavar = f"{{{', '.join(str(c) for c in choices)}}}"
@@ -68,13 +78,15 @@ def parse_field(
     )
 
     # Add Literal Field
+    name = utils.arguments.name(field, is_inverted)
+    alias = field.alias or name
     parser.add_argument(
-        utils.arguments.name(field, is_inverted),
+        name,
         action=action,
         help=utils.arguments.description(field),
-        dest=field.alias,
+        dest=alias,
         metavar=metavar,
-        required=bool(field.required),
+        required=bool(field.is_required()),
         **const,  # type: ignore[arg-type]
     )
 
