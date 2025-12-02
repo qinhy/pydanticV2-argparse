@@ -9,7 +9,7 @@ testing all branches of all functions.
 import argparse
 
 # Local
-from pydantic2_argparse import utils
+from pydanticV2_argparse import utils
 
 
 def test_namespace_to_dict() -> None:

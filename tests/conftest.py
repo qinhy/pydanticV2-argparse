@@ -17,7 +17,7 @@ import sys
 import pydantic.v1 as pydantic
 
 # Local
-from pydantic2_argparse.argparse import actions
+from pydanticV2_argparse.argparse import actions
 
 # Typing
 from typing import Any, Deque, Dict, FrozenSet, List, Optional, Set, Tuple, Type

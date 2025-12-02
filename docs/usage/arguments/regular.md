@@ -1,5 +1,5 @@
 ## Overview
-`pydantic2-argparse` provides functionality for regular arguments. A regular
+`pydanticV2-argparse` provides functionality for regular arguments. A regular
 argument is a command-line argument that is followed by *exactly* one value.
 For example: `--arg hello`, `--arg 123` or `--arg 42.0`.
 
@@ -14,7 +14,7 @@ The intended usage of regular arguments is to capture and validate a value from
 the user for the application. For example:
 
 ```console
-$ python3 example.py --name anastasds
+$ python3 example.py --name qinhy
 ```
 
 ```python
@@ -38,7 +38,7 @@ Some examples of simple "singular" inbuilt types:
     [docs][1]
 
 !!! note
-    `pydantic2-argparse` handles some types *specially*, such as:
+    `pydanticV2-argparse` handles some types *specially*, such as:
 
     * `collections.abc.Container` (e.g., `list`, `tuple`, `set`)
     * `bool`

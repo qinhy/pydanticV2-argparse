@@ -13,7 +13,7 @@ import pytest
 import pydantic.v1 as pydantic
 
 # Local
-from pydantic2_argparse import utils
+from pydanticV2_argparse import utils
 from tests import conftest as conf
 
 # Typing

@@ -6,7 +6,7 @@ try:
     import pydantic.v1 as pydantic
 except ImportError:
     import pydantic
-import pydantic2_argparse
+import pydanticV2_argparse
 
 # Typing
 from typing import Optional
@@ -41,7 +41,7 @@ class Arguments(pydantic.BaseModel):
 def main() -> None:
     """Main Function."""
     # Create Parser and Parse Args
-    parser = pydantic2_argparse.ArgumentParser(
+    parser = pydanticV2_argparse.ArgumentParser(
         model=Arguments,
         prog="Example Program",
         description="Example Description",

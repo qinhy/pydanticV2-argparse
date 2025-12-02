@@ -1,40 +1,50 @@
-[tool.poetry]
-name = "pydantic2-argparse"
-version = "0.9.2"
+[project]
+name = "pydanticV2-argparse"
+version = "1.0.0"
 description = "Typed Argument Parsing with Pydantic"
-authors = ["Hayden Richards <SupImDos@gmail.com>", "Anastas Stoyanovsky <contact@anastas.eu>"]
 readme = "README.md"
+requires-python = ">=3.8"
 license = "MIT"
-homepage = "https://github.com/anastasds/pydantic2-argparse"
-repository = "https://github.com/anastasds/pydantic2-argparse"
+license-files = ["LICENSE.md"]
+
+authors = [
+    { name = "Hayden Richards", email = "SupImDos@gmail.com" },
+    { name = "Anastas Stoyanovsky", email = "contact@anastas.eu" },
+    { name = "HUANGYI QIN", email = "qinhunagyi@gmail.com" },
+]
+
 keywords = ["python", "pydantic", "argparse", "typed", "validation"]
-include = ["LICENSE.md"]
 
-[tool.poetry.dependencies]
-python = "^3.8"
-pydantic = "2.5.3"
-importlib_metadata = { version = ">=4", python = "<3.8" }
-typing_extensions = { version = ">=4", python = "<3.8" }
-pydantic-settings = "^2.1.0"
+dependencies = [
+    "pydantic>=2.11",
+    "pydantic-settings>=2.1.0"
+]
 
-[tool.poetry.group.dev.dependencies]
-poethepoet = "^0.18.1"
-mypy = "^1.0.0"
-ruff = "^0.0.247"
-pytest = "^7.2.1"
-pytest-cov = "^4.0.0"
-pytest-mock = "^3.10.0"
-covdefaults = "^2.2.2"
-mkdocs-material = "^9.0.13"
-mkdocstrings = { extras = ["python-legacy"], version = "^0.20.0" }
-mkdocs-gen-files = "^0.4.0"
-mkdocs-literate-nav = "^0.6.0"
-mkdocs-autorefs = "^0.4.1"
+[project.urls]
+Homepage = "https://github.com/qinhy/pydanticV2-argparse"
+Repository = "https://github.com/qinhy/pydanticV2-argparse"
+
+[dependency-groups]
+dev = [
+    "poethepoet>=0.18.1",
+    "mypy>=1.0.0",
+    "ruff>=0.0.247",
+    "pytest>=7.2.1",
+    "pytest-cov>=4.0.0",
+    "pytest-mock>=3.10.0",
+    "covdefaults>=2.2.2",
+    "mkdocs-material>=9.0.13",
+    "mkdocstrings[python-legacy]>=0.20.0",
+    "mkdocs-gen-files>=0.4.0",
+    "mkdocs-literate-nav>=0.6.0",
+    "mkdocs-autorefs>=0.4.1",
+    "ipython>=9.7.0",
+]
 
 [tool.poe.tasks]
-test = "pytest tests --cov=pydantic2_argparse"
-type = "mypy tests docs pydantic2_argparse"
-lint = "ruff tests docs pydantic2_argparse"
+test = "pytest tests --cov=pydanticV2_argparse"
+type = "mypy tests docs pydanticV2_argparse"
+lint = "ruff tests docs pydanticV2_argparse"
 clean = "rm -rf **/.coverage **/.mypy_cache **/.pytest_cache **/.ruff_cache **/__pycache__"
 build = "poetry build"
 publish = "poetry publish"
