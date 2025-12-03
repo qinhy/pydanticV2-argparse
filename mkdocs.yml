@@ -1,12 +1,18 @@
 # Site
 site_name: Pydantic Argparse
 site_description: Typed Argument Parsing with Pydantic
-site_url: https://github.com/qinhy/pydanticV2-argparse
+site_url: https://qinhy.github.io/pydanticV2-argparse/
 site_author: qinhy
+edit_uri: edit/master/docs/
 
 # Repository
 repo_name: qinhy/pydanticV2-argparse
 repo_url: https://github.com/qinhy/pydanticV2-argparse
+
+# Live Reload Paths
+watch:
+  - examples
+  - pydanticV2_argparse
 
 # Navigation
 nav:
@@ -30,8 +36,9 @@ nav:
 # Theme
 theme:
   name: material
+  logo: assets/images/logo.svg
+  favicon: assets/images/logo.svg
   icon:
-    logo: material/filter-plus
     repo: fontawesome/brands/github
   palette:
     - media: "(prefers-color-scheme: light)"
@@ -49,6 +56,8 @@ theme:
         icon: material/toggle-switch-off-outline
         name: Switch to light mode
   features:
+    - content.action.edit
+    - content.action.view
     - content.code.copy
     - navigation.footer
     - navigation.instant
