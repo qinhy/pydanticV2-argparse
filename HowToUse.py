@@ -1,17 +1,10 @@
 from typing import Optional, List, Union
 from pydantic import BaseModel, Field
 import pydanticV2_argparse
-from pydanticV2_argparse.utils.types import is_field_a
-import argparse
-import ast
-import collections.abc
 import enum
-import sys
-from types import NoneType
 
 class TestEnum(enum.Enum):
     """Test Enum for Testing."""
-
     A = enum.auto()
     B = enum.auto()
     C = enum.auto()
@@ -23,7 +16,10 @@ class Arguments(BaseModel):
     flag: bool = Field(description="a required flag")    
     li: Union[List[str],None] = Field(None, description="str list") # "--li a b c"
     en: Optional[TestEnum] = None
-
+    arg_62: List[str] = Field(
+        default_factory=lambda: ["A", "B", "C"],
+        description="arg_24",
+    )
     # Optional Args
     second_flag: bool = Field(False, description="an optional flag")
     third_flag: bool = Field(True, description="an optional flag")
@@ -39,14 +35,9 @@ def main() -> None:
         epilog="Example Epilog",
     )
     args = parser.parse_typed_args()
-
     # Print Args
-    print(args.model_dump())
-    return parser
+    return args
 
 
 if __name__ == "__main__":
-    parser = main()
-    
-    # HowToUse.py --string 123 --integer 123 --flag
-    # {'string': '123', 'integer': 123, 'flag': True, 'li': None, 'second_flag': False, 'third_flag': True}
+    args = main()

@@ -10,6 +10,11 @@ import sys
 from types import NoneType, SimpleNamespace
 import types
 
+
+from typing import Any, Tuple, Union, get_origin, get_args, Literal
+import types as _types
+
+
 # Third-Party
 import pydantic
 
@@ -22,115 +27,161 @@ if sys.version_info < (3, 8):  # pragma: <3.8 cover
 else:  # pragma: >=3.8 cover
     from typing import get_args, get_origin
 
+# def is_field_a(
+#     field: pydantic.fields.FieldInfo,
+#     types: Union[Any, Tuple[Any, ...]],
+# ) -> bool:
+#     """Checks whether the subject *is* any of the supplied types.
 
-# Undefined sentinels used by different pydantic versions
-try:  # pragma: no cover - import guard
-    from pydantic_core import PydanticUndefined  # type: ignore
-except Exception:  # pragma: no cover - fallback when pydantic-core isn't present
-    PydanticUndefined = object()
+#     The checks are performed as follows:
 
-Undefined = getattr(pydantic.fields, "Undefined", object())
+#     1. `field` *is* one of the `types`
+#     2. `field` *is an instance* of one of the `types`
+#     3. `field` *is a subclass* of one of the `types`
 
+#     If any of these conditions are `True`, then the function returns `True`,
+#     else `False`.
 
-def get_field_type(field: Any) -> Any:
-    """Return the annotated/outer type for a field in a compatible way."""
-    for attr in ("outer_type_", "annotation", "type_"):
-        if hasattr(field, attr):
-            value = getattr(field, attr)
-            if value is not None:
-                return value
-    raise ValueError(f"can not get field type of {field}")
+#     Args:
+#         field (pydantic.fields.FieldInfo): Subject field to check type of.
+#         types (Union[Any, Tuple[Any, ...]]): Type(s) to compare field against.
 
+#     Returns:
+#         bool: Whether the field *is* considered one of the types.
+#     """
+#     # Create tuple if only one type was provided
+#     if not isinstance(types, tuple):
+#         types = (types,)
 
-def is_field_a(
-    field: pydantic.fields.FieldInfo,
-    types_: Union[Any, Tuple[Any, ...]],
-) -> bool:
-    # Normalize types to a tuple
-    if not isinstance(types_, tuple):
-        types_ = (types_,)
+#     # Get field type, or origin if applicable
+#     field_type = get_origin(field.annotation) or field.annotation
+#     if field_type is None:
+#         return False
 
-    field_type = get_field_type(field)
-    if field_type is None:
-        return False
+#     # Check `isinstance` and `issubclass` validity
+#     # In order for `isinstance` and `issubclass` to be valid, all arguments
+#     # should be instances of `type`, otherwise `TypeError` *may* be raised.
+#     is_valid = all(isinstance(t, type) for t in (*types, field_type))
 
-    origin = get_origin(field_type)
+#     # Perform checks and return
+#     return (
+#         field_type in types
+#         or (is_valid and isinstance(field_type, types))
+#         or (is_valid and issubclass(field_type, types))
+#     )
 
-    # Handle Union / Optional specially
-    if origin in (Union, types.UnionType):
-        # Extract args, drop NoneType, unwrap any generics
-        candidate_types = []
-        for arg in get_args(field_type):
+def _iter_candidate_annotations(tp: Any):
+    """Yield non-None annotations from a (possibly union) annotation.
+
+    Examples:
+        Optional[List[str]] -> yields `typing.List[str]`
+        List[str] | None    -> yields `list[str]`
+        List[str]           -> yields `list[str]`
+        bool                -> yields `bool`
+    """
+    if tp is None:
+        return
+
+    origin = get_origin(tp)
+
+    # Handle Union / | syntax / Optional[T]
+    if origin is Union or origin is _types.UnionType:
+        for arg in get_args(tp):
             if arg is type(None):
-                continue  # skip Optional's None
-            arg_origin = get_origin(arg)
-            candidate_types.append(arg_origin or arg)
+                # Skip the None part of Optional[T]
+                continue
+            # Recurse in case of nested Unions
+            yield from _iter_candidate_annotations(arg)
     else:
-        # Non-union: unwrap generics once
-        candidate_types = [origin or field_type]
+        yield tp
 
-    if not candidate_types:
-        # e.g. field_type is just NoneType
-        return False
 
-    # Now run your checks against each concrete candidate type
-    for ft in candidate_types:
-        # 1. exact match
-        if ft in types_:
-            return True
+def _single_annotation_matches(annotation: Any, expected: Any) -> bool:
+    """Does a single (non-union) annotation match `expected`?"""
+    origin = get_origin(annotation)
 
-        # 2. subclass / ABC check (Container, Sequence, etc.)
-        if isinstance(ft, type):
-            for t in types_:
-                if isinstance(t, type):
-                    try:
-                        if issubclass(ft, t):
-                            return True
-                    except TypeError:
-                        # typing artefacts that don't support issubclass
-                        pass
+    # --- Special case: Literal[...] ---
+    # Your tests expect:
+    #   Literal["A"]     -> matches Literal
+    #   Literal[1,2,3]   -> matches Literal
+    if origin is Literal:
+        return expected is Literal or expected == Literal
+
+    # For "normal" generics, use their origin:
+    #   List[str]  -> list
+    #   Dict[...]  -> dict
+    #   Deque[...] -> collections.deque
+    base = origin or annotation
+
+    # 1. Exact identity (covers simple cases & subclasses directly)
+    if base is expected or annotation is expected:
+        return True
+
+    # 2. issubclass for real classes / ABCs (e.g. list -> Container, dict -> Mapping)
+    if isinstance(base, type) and isinstance(expected, type):
+        try:
+            if issubclass(base, expected):
+                return True
+        except TypeError:
+            # Defensive: some weird typing objects may still slip through
+            pass
+
+    # 3. Fallback equality (for some typing constructs with value equality)
+    if base == expected or annotation == expected:
+        return True
 
     return False
 
+
 def is_field_a(
-    field: pydantic.fields.FieldInfo,
+    field: "pydantic.fields.FieldInfo",
     types: Union[Any, Tuple[Any, ...]],
 ) -> bool:
-    """Checks whether the subject *is* any of the supplied types.
+    """Checks whether the field's *type* matches any of the supplied types.
 
-    The checks are performed as follows:
-
-    1. `field` *is* one of the `types`
-    2. `field` *is an instance* of one of the `types`
-    3. `field` *is a subclass* of one of the `types`
-
-    If any of these conditions are `True`, then the function returns `True`,
-    else `False`.
-
-    Args:
-        field (pydantic.fields.FieldInfo): Subject field to check type of.
-        types (Union[Any, Tuple[Any, ...]]): Type(s) to compare field against.
-
-    Returns:
-        bool: Whether the field *is* considered one of the types.
+    Supports:
+      - bare types: bool, int, str, bytes, ...
+      - typing generics: List, List[str], Dict, Dict[str, int], Deque[str], ...
+      - ABCs: collections.abc.Container, collections.abc.Mapping, ...
+      - Optional / Union: Optional[List[str]], List[str] | None, ...
+      - Literal: Literal["A"], Literal[1, 2, 3] vs Literal
+      - Class hierarchies: subclasses of BaseModel, Enum, etc.
     """
-    # Create tuple if only one type was provided
+    # Normalise `types` to a tuple
     if not isinstance(types, tuple):
         types = (types,)
 
-    # Get field type, or origin if applicable
-    field_type = get_origin(get_field_type(field)) or get_field_type(field)
+    field_type = field.annotation
     if field_type is None:
         return False
 
-    # Check `isinstance` and `issubclass` validity
-    # In order for `isinstance` and `issubclass` to be valid, all arguments
-    # should be instances of `type`, otherwise `TypeError` *may* be raised.
-    is_valid = all(isinstance(t, type) for t in (*types, field_type))
+    candidates = list(_iter_candidate_annotations(field_type))
+    if not candidates:
+        return False
 
-    # Perform checks and return
-    return (
-        field_type in types
-        or (is_valid and isinstance(field_type, types))
-        or (is_valid and issubclass(field_type, types))
-    )
+    for ann in candidates:
+        for expected in types:
+            if _single_annotation_matches(ann, expected):
+                return True
+
+    return False
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

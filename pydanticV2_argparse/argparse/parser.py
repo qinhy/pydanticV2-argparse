@@ -337,10 +337,52 @@ class ArgumentParser(argparse.ArgumentParser, Generic[PydanticModelT]):
             self._commands().add_parser(
                 field.alias,
                 help=field.description,
-                model=field.annotation,  # type: ignore[call-arg]
+                model=list(utils.types._iter_candidate_annotations(field.annotation))[0],  # type: ignore[call-arg]
                 exit_on_error=False,  # Allow top level parser to handle exiting
             )
             validator = None
+
+        elif is_Literal:
+            ########## Add Literal Field ##########
+            # Extract Choices
+            choices = get_args(field.annotation)
+            choices = [c for c in choices if c!=NoneType]
+            tmp_choices = [list(get_args(c)) if get_origin(c)==Literal else c for c in choices]
+            choices = []
+            for c in tmp_choices:
+                if type(c)==list:
+                    choices += c 
+                else:
+                    choices.append(c)
+
+            # Compute Argument Intrinsics
+            is_flag = len(choices) == 1 and not field.is_required()
+            is_inverted = is_flag and field.get_default() is not None and allows_none(field)
+
+            # Determine Argument Properties
+            metavar = f"{{{', '.join(str(c) for c in choices)}}}"
+            action = argparse._StoreConstAction if is_flag else argparse._StoreAction
+
+            const = (
+                {} if not is_flag else {"const": None} if is_inverted else {"const": choices[0]}
+            )
+            
+            if is_flag:
+                if allows_none(field):
+                    # add inverted
+                    self._add_argument_base(name=name, field=field, action=action,
+                                    is_inverted=True,metavar=metavar, **{"const": None},
+                    )
+
+            self._add_argument_base(name=name,field=field,action=action,
+                            metavar=metavar, **const,  # type: ignore[arg-type]
+            )
+            # Construct String Representation Mapping of Choices
+            # This allows us O(1) parsing of choices from strings
+            mapping = {str(choice): choice for choice in choices}
+
+            # Construct and Return Validator
+            validator = utils.pydantic.as_validator(name, lambda v: mapping[str(v)])
 
         elif is_Boolean:
             ########## Add Boolean Field ##########
@@ -374,55 +416,29 @@ class ArgumentParser(argparse.ArgumentParser, Generic[PydanticModelT]):
             # Construct and Return Validator
             validator = utils.pydantic.as_validator(name, lambda v: ast.literal_eval(v))
 
-        elif is_Literal:
-            ########## Add Literal Field ##########
-            # Extract Choices
-            choices = get_args(field.annotation)
-
-            # Compute Argument Intrinsics
-            is_flag = len(choices) == 1 and not field.is_required()
-            is_inverted = is_flag and field.get_default() is not None and allows_none(field)
-
-            # Determine Argument Properties
-            metavar = f"{{{', '.join(str(c) for c in choices)}}}"
-            action = argparse._StoreConstAction if is_flag else argparse._StoreAction
-            const = (
-                {} if not is_flag else {"const": None} if is_inverted else {"const": choices[0]}
-            )
-
-            self._add_argument_base(name=name,field=field,action=action,
-                            metavar=metavar, **const,  # type: ignore[arg-type]
-            )
-            # Construct String Representation Mapping of Choices
-            # This allows us O(1) parsing of choices from strings
-            mapping = {str(choice): choice for choice in choices}
-
-            # Construct and Return Validator
-            validator = utils.pydantic.as_validator(name, lambda v: mapping[str(v)])
-
         elif is_Enum:
             ########## Add Enum Field ##########
             # Extract Enum
-            enum_type: Type[enum.Enum] = field.annotation
-
+            enum_type: Type[enum.Enum] = list(utils.types._iter_candidate_annotations(field.annotation))[0]
             # Compute Argument Intrinsics
             is_flag = len(enum_type) == 1 and not field.is_required()
-            is_inverted = is_flag and field.get_default() is not None and allows_none(field)
 
             # Determine Argument Properties
             metavar = f"{{{', '.join(e.name for e in enum_type)}}}"
-            action = argparse._StoreConstAction if is_flag else argparse._StoreAction
-            const = (
-                {}
-                if not is_flag
-                else {"const": None}
-                if is_inverted else {"const": list(enum_type)[0]}  # type: ignore[dict-item]
-            )
+            action = argparse._StoreConstAction if is_flag else argparse._StoreAction            
+            const = {}
+            if is_flag:
+                const = {"const": list(enum_type)[0]}
 
-            ########## Add Enum Field ##########
+                if allows_none(field):
+                    # add inverted
+                    self._add_argument_base(name=name, field=field, action=action,
+                                    is_inverted=True,metavar=metavar, **{"const": None},
+                    )
+
             self._add_argument_base(name=name, field=field, action=action,
-                            metavar=metavar, **const,  # type: ignore[arg-type]
-            )            
+                            metavar=metavar, **const,
+            )          
             # Construct and Return Validator
             return utils.pydantic.as_validator(name, lambda v: enum_type[v])
 
@@ -441,6 +457,7 @@ class ArgumentParser(argparse.ArgumentParser, Generic[PydanticModelT]):
         name:str,
         field: pydantic.fields.FieldInfo,
         action,
+        default_str:Any=None,
         metavar:str=None,
         no_metavar:str=False,
         is_inverted:bool=False,
@@ -448,9 +465,18 @@ class ArgumentParser(argparse.ArgumentParser, Generic[PydanticModelT]):
     ) -> Optional[utils.pydantic.PydanticValidator]:
         name = utils.arguments.name(field,is_inverted)
         alias = field.alias or name
+        if default_str is None:
+            default_str = field.get_default()
+            if field.default_factory:
+                default_str = field.default_factory()           
+        # Construct Default String
+        default_str = f"(default: {default_str})" if not field.is_required() else None
+        # # Return Standardised Description String
+        help=" ".join(filter(None, [field.description, default_str]))
+
         args = dict(
             action=action,
-            help=utils.arguments.description(field),
+            help=help,
             dest=alias,
             metavar=(metavar or alias.upper()),
             required=field.is_required(),
