@@ -1,6 +1,6 @@
 [project]
 name = "pydanticV2-argparse"
-version = "1.0.0"
+version = "1.0.1"
 description = "Typed Argument Parsing with Pydantic"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -16,7 +16,7 @@ authors = [
 keywords = ["python", "pydantic", "argparse", "typed", "validation"]
 
 dependencies = [
-    "pydantic>=2.10.6",
+    "pydantic>=2.5.3",
     "pydantic-settings>=2.8.1",
 ]
 
