@@ -26,7 +26,7 @@ import pydantic
 from pydantic_settings import BaseSettings
 
 # Local
-from pydanticV2_argparse.argparse import actions
+from pydanticV2_argparse import actions
 
 
 def create_test_model(

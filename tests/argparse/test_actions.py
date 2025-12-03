@@ -13,7 +13,7 @@ import argparse
 import pytest
 
 # Local
-from pydanticV2_argparse.argparse import actions
+from pydanticV2_argparse import actions
 from tests import conftest as conf
 
 

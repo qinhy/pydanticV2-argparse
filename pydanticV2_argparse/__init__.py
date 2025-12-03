@@ -9,7 +9,7 @@ The public interface exposed by this package is the declarative and typed
 """
 
 # Local
-from .argparse import ArgumentParser
+from .parser import ArgumentParser
 
 
 # Public Re-Exports
