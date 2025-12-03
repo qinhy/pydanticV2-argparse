@@ -8,9 +8,9 @@ license = "MIT"
 license-files = ["LICENSE.md"]
 
 authors = [
+    { name = "HUANGYI QIN", email = "qinhunagyi@gmail.com" },
     { name = "Hayden Richards", email = "SupImDos@gmail.com" },
     { name = "Anastas Stoyanovsky", email = "contact@anastas.eu" },
-    { name = "HUANGYI QIN", email = "qinhunagyi@gmail.com" },
 ]
 
 keywords = ["python", "pydantic", "argparse", "typed", "validation"]

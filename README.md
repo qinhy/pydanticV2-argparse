@@ -21,7 +21,7 @@
     <a href="https://github.com/qinhy/pydanticV2-argparse/actions/workflows/tests.yml">
         <img src="https://img.shields.io/github/actions/workflow/status/qinhy/pydanticV2-argparse/tests.yml?label=tests">
     </a>
-    <a href="https://github.com/anastsds/pydanticV2-argparse/actions/workflows/tests.yml">
+    <a href="https://github.com/qinhy/pydanticV2-argparse/actions/workflows/tests.yml">
         <img src="https://img.shields.io/coveralls/github/qinhy/pydanticV2-argparse">
     </a>
     <a href="https://github.com/qinhy/pydanticV2-argparse/actions/workflows/linting.yml">
