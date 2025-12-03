@@ -28,7 +28,7 @@ PydanticValidator = classmethod
 
 
 def as_validator(
-    field: pydantic.fields.FieldInfo,
+    field_name:str,
     caster: Callable[[str], Any],
 ) -> PydanticValidator:
     """Shortcut to wrap a caster and construct a validator for a given field.
@@ -46,8 +46,6 @@ def as_validator(
     Returns:
         PydanticValidator: Constructed field validator function.
     """
-    field_name = field.name or field.alias
-
     # Dynamically construct a `pydantic` field_validator function for the supplied
     # field. The constructed field_validator must be `pre=True` so that the field_validator
     # is called before the built-in `pydantic` field validation occurs and is

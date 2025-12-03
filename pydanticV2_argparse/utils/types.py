@@ -8,6 +8,7 @@ the types of `pydantic` fields across both Pydantic v1 and v2.
 # Standard
 import sys
 from types import NoneType, SimpleNamespace
+import types
 
 # Third-Party
 import pydantic
@@ -40,6 +41,56 @@ def get_field_type(field: Any) -> Any:
                 return value
     raise ValueError(f"can not get field type of {field}")
 
+
+def is_field_a(
+    field: pydantic.fields.FieldInfo,
+    types_: Union[Any, Tuple[Any, ...]],
+) -> bool:
+    # Normalize types to a tuple
+    if not isinstance(types_, tuple):
+        types_ = (types_,)
+
+    field_type = get_field_type(field)
+    if field_type is None:
+        return False
+
+    origin = get_origin(field_type)
+
+    # Handle Union / Optional specially
+    if origin in (Union, types.UnionType):
+        # Extract args, drop NoneType, unwrap any generics
+        candidate_types = []
+        for arg in get_args(field_type):
+            if arg is type(None):
+                continue  # skip Optional's None
+            arg_origin = get_origin(arg)
+            candidate_types.append(arg_origin or arg)
+    else:
+        # Non-union: unwrap generics once
+        candidate_types = [origin or field_type]
+
+    if not candidate_types:
+        # e.g. field_type is just NoneType
+        return False
+
+    # Now run your checks against each concrete candidate type
+    for ft in candidate_types:
+        # 1. exact match
+        if ft in types_:
+            return True
+
+        # 2. subclass / ABC check (Container, Sequence, etc.)
+        if isinstance(ft, type):
+            for t in types_:
+                if isinstance(t, type):
+                    try:
+                        if issubclass(ft, t):
+                            return True
+                    except TypeError:
+                        # typing artefacts that don't support issubclass
+                        pass
+
+    return False
 
 def is_field_a(
     field: pydantic.fields.FieldInfo,
@@ -83,89 +134,3 @@ def is_field_a(
         or (is_valid and isinstance(field_type, types))
         or (is_valid and issubclass(field_type, types))
     )
-
-
-def get_model_fields(model: Any) -> Dict[str, Any]:
-    """Retrieve a model's fields mapping with Pydantic v1/v2 compatibility."""
-    if hasattr(model, "model_fields"):
-        return getattr(model, "model_fields")
-    if hasattr(model, "model_fields"):
-        return getattr(model, "model_fields")
-    return {}
-
-
-def is_required(field: Any) -> bool:
-    """Determine whether a field is required across pydantic versions."""
-    if hasattr(field, "is_required"):
-        return bool(field.is_required())
-    if hasattr(field, "required"):
-        return bool(getattr(field, "required"))
-    default = getattr(field, "default", PydanticUndefined)
-    if default not in (Undefined, PydanticUndefined):
-        return False
-    if getattr(field, "default_factory", None):
-        return False
-    return True
-
-
-def get_default(field: Any) -> Any:
-    """Retrieve a field's default value or None if it is undefined."""
-    if hasattr(field, "get_default") and callable(field.get_default):
-        try:
-            return field.get_default()
-        except TypeError:
-            # Some implementations expect parameters; ignore and continue
-            pass
-
-    default_factory = getattr(field, "default_factory", None)
-    if default_factory:
-        try:
-            return default_factory()
-        except TypeError:
-            return default_factory() if callable(default_factory) else default_factory
-
-    default = getattr(field, "default", PydanticUndefined)
-    if default in (Undefined, PydanticUndefined):
-        return None
-    return default
-
-
-def field_alias(field: Any, fallback: str) -> str:
-    """Return the field's alias, defaulting to the provided fallback."""
-    alias = getattr(field, "alias", None)
-    return alias or fallback
-
-
-def field_description(field: Any) -> str:
-    """Return a field's description string if present."""
-    return getattr(field, "description", "") or ""
-
-
-def allows_none(field: Any) -> bool:
-    """Determine if a field allows None."""
-    ann = getattr(field, "annotation", None)
-    if ann is None: return False
-    # Unwrap Annotated[...] if you use it
-    origin = get_origin(ann)
-    if origin is Union:
-        return any(arg is NoneType for arg in get_args(ann))
-    return ann is NoneType
-
-
-def field_name(field: Any, fallback: str) -> str:
-    """Return the field name for use with validators."""
-    name = getattr(field, "name", None)
-    return name or fallback
-
-
-class FieldWrapper:
-    def __init__(self, name: str, field: pydantic.fields.FieldInfo) -> None:
-        self._field = field
-        self.name = name
-        self.alias = field.alias or name
-    def __getattr__(self, item: str) -> Any:
-        return getattr(self._field, item)
-
-
-def ensure_model_field(name: str, field: pydantic.fields.FieldInfo) -> Any:
-    return FieldWrapper(name,field)
