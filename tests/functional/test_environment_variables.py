@@ -191,7 +191,7 @@ def test_valid_environment_variables(
     """
     # Construct Pydantic Model
     model = conf.create_test_model(test=(argument_type, argument_default))
-    
+
     # Create ArgumentParser
     parser = pydanticV2_argparse.ArgumentParser(model)
 

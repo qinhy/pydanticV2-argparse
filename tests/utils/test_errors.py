@@ -5,16 +5,8 @@ all branches of all functions.
 """
 
 
-# Standard
-import textwrap
-
 # Third-Party
 import pytest
-import pydantic
-
-# Local
-from pydanticV2_argparse import utils
-from tests import conftest as conf
 
 # Typing
 from typing import Sequence, Tuple, Union
@@ -34,7 +26,7 @@ ErrorDefinition = Tuple[Exception, Union[str, Tuple[str, ...]]]
     [
         (
             [
-                (ValueError('MissingError'), "argument"),
+                (ValueError("MissingError"), "argument"),
             ],
             """
             1 validation error for TestModel
@@ -44,9 +36,9 @@ ErrorDefinition = Tuple[Exception, Union[str, Tuple[str, ...]]]
         ),
         (
             [
-                (ValueError('IPv4AddressError'), ("a", )),
-                (ValueError('IntegerError'),     ("a", "b")),
-                (ValueError('UUIDError'),        ("a", "b", "c")),
+                (ValueError("IPv4AddressError"), ("a", )),
+                (ValueError("IntegerError"),     ("a", "b")),
+                (ValueError("UUIDError"),        ("a", "b", "c")),
             ],
             """
             3 validation errors for TestModel

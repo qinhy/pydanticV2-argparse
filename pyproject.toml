@@ -45,7 +45,7 @@ dev = [
 [tool.poe.tasks]
 test = "pytest tests --cov=pydanticV2_argparse"
 type = "mypy tests docs pydanticV2_argparse"
-lint = "ruff tests docs pydanticV2_argparse"
+lint = "ruff check tests docs pydanticV2_argparse"
 clean = "rm -rf **/.coverage **/.mypy_cache **/.pytest_cache **/.ruff_cache **/__pycache__"
 build = "poetry build"
 publish = "poetry publish"
