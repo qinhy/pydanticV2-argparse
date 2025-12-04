@@ -29,7 +29,6 @@ from pydantic_settings import BaseSettings, SettingsError
 # Local
 from . import utils
 from . import actions
-from . import patches  # noqa: F401
 
 # Typing
 from typing import Any, Callable, Dict, Generic, List, Literal, NoReturn, Optional, Type, TypeVar, Union, cast, get_args, get_origin

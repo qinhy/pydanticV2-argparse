@@ -9,6 +9,10 @@ The public interface exposed by this package is the declarative and typed
 """
 
 # Local
+
+# important! must do first
+from . import patches
+
 from .parser import ArgumentParser
 
 

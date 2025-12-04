@@ -10,8 +10,18 @@ import argparse
 import sys
 
 # Typing
-from typing import Optional
+import typing
+from typing import Any, Optional
 
+if sys.version_info >= (3, 14):
+    # Only patch if needed
+    if hasattr(typing, "_eval_type"):
+        _orig_eval_type = typing._eval_type
+        def _eval_type_patched(t:Any, globalns:Any, localns:Any, *args:Any, **kwargs:Any)->Any:
+            # Drop keyword that older typing._eval_type doesn't support
+            kwargs.pop("prefer_fwd_module", None)
+            return _orig_eval_type(t, globalns, localns, *args, **kwargs)
+        typing._eval_type = _eval_type_patched
 
 # In Python versions before 3.9, using argparse with required subparsers will
 # cause an unhelpful `TypeError` if the 'dest' parameter is not explicitly

@@ -4,6 +4,8 @@ The `conftest.py` file serves as a means of providing fixtures for an entire
 directory. Fixtures defined in a `conftest.py` can be used by any test in the
 package without needing to import them.
 """
+# Local
+import pydanticV2_argparse
 
 # Standard
 import argparse
@@ -23,22 +25,7 @@ else:  # pragma: >=3.8 cover
 
 # Third-Party
 import pydantic
-if sys.version_info >= (3, 14):
-    import typing
-    # Only patch if needed
-    if hasattr(typing, "_eval_type"):
-        _orig_eval_type = typing._eval_type
-        def _eval_type_patched(t:Any, globalns:Any, localns:Any, *args:Any, **kwargs:Any)->Any:
-            # Drop keyword that older typing._eval_type doesn't support
-            kwargs.pop("prefer_fwd_module", None)
-            return _orig_eval_type(t, globalns, localns, *args, **kwargs)
-        typing._eval_type = _eval_type_patched
-
 from pydantic_settings import BaseSettings
-
-# Local
-from pydanticV2_argparse import actions
-
 
 def create_test_model(
     name: str = "test",
@@ -99,7 +86,7 @@ def create_test_field(
 def create_test_subparser(
     name: str = "test",
     parser_class: Type[argparse.ArgumentParser] = argparse.ArgumentParser,
-) -> actions.SubParsersAction:
+) -> pydanticV2_argparse.actions.SubParsersAction:
     """Constructs a `SubParsersAction` with sensible defaults for testing.
 
     Args:
@@ -107,10 +94,10 @@ def create_test_subparser(
         parser_class (Type[argparse.ArgumentParser]): Parser for the action.
 
     Returns:
-        actions.SubParsersAction: Dynamically constructed `SubParsersAction`.
+        pydanticV2_argparse.actions.SubParsersAction: Dynamically constructed `SubParsersAction`.
     """
     # Construct SubParsersAction
-    return actions.SubParsersAction(
+    return pydanticV2_argparse.actions.SubParsersAction(
         option_strings=[],  # Always empty for the `SubParsersAction`
         prog=name,
         parser_class=parser_class,
