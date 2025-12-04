@@ -23,6 +23,17 @@ else:  # pragma: >=3.8 cover
 
 # Third-Party
 import pydantic
+if sys.version_info >= (3, 14):
+    import typing
+    # Only patch if needed
+    if hasattr(typing, "_eval_type"):
+        _orig_eval_type = typing._eval_type
+        def _eval_type_patched(t:Any, globalns:Any, localns:Any, *args:Any, **kwargs:Any)->Any:
+            # Drop keyword that older typing._eval_type doesn't support
+            kwargs.pop("prefer_fwd_module", None)
+            return _orig_eval_type(t, globalns, localns, *args, **kwargs)
+        typing._eval_type = _eval_type_patched
+
 from pydantic_settings import BaseSettings
 
 # Local

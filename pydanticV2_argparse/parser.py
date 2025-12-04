@@ -91,6 +91,7 @@ class ArgumentParser(argparse.ArgumentParser, Generic[PydanticModelT]):
         epilog: Optional[str] = None,
         add_help: bool = True,
         exit_on_error: bool = True,
+        color: str = "white", # for 3.14
     ) -> None:
         """Instantiates the Typed Argument Parser with its `pydantic` model.
 
@@ -102,6 +103,7 @@ class ArgumentParser(argparse.ArgumentParser, Generic[PydanticModelT]):
             epilog (Optional[str]): Optional text following help message.
             add_help (bool): Whether to add a `-h`/`--help` flag.
             exit_on_error (bool): Whether to exit on error.
+            color (str): Reserved for future argparse color support.
         """
         # Initialise Super Class
         if sys.version_info < (3, 9):  # pragma: <3.9 cover
