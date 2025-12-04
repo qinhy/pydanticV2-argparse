@@ -36,8 +36,8 @@ nav:
 # Theme
 theme:
   name: material
-  logo: assets/images/logo.svg
-  favicon: assets/images/logo.svg
+  logo: assets/images/logo.jpg
+  favicon: assets/images/logo.jpg
   icon:
     repo: fontawesome/brands/github
   palette:

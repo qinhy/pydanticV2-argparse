@@ -1,6 +1,6 @@
 <div align="center">
     <a href="https://github.com/qinhy/pydanticV2-argparse">
-        <img src="assets/images/logo.svg" width="50%">
+        <img src="assets/images/logo.jpg" width="50%">
     </a>
     <h1 style="margin-bottom:0;font-size:3em;">
         Pydantic Args
