@@ -39,6 +39,7 @@ dev = [
     "mkdocs-literate-nav>=0.6.0",
     "mkdocs-autorefs>=0.4.1",
     "ipython>=8.12.3",
+    "poetry>=1.8.5",
 ]
 
 [tool.poe.tasks]
@@ -106,6 +107,17 @@ init_forbid_extra = true
 init_typed = true
 warn_required_dynamic_aliases = true
 warn_untyped_fields = true
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+warn_untyped_fields = true
+
+[tool.poetry]
+packages = [
+    { include = "pydanticV2_argparse" }
+]
 
 [build-system]
 requires = ["poetry-core"]
