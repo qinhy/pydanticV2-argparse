@@ -9,7 +9,7 @@ dynamic pydantic validators, and inspecting field types.
 import argparse
 import sys
 import types as _types
-from typing import Any, Callable, Dict, Literal, Optional, Tuple, Type, TypeVar, Union
+from typing import Any, Callable, Dict, Iterator, Literal, Optional, Tuple, Type, TypeVar, Union
 
 # Third-Party
 import pydantic as _pydantic
@@ -28,7 +28,7 @@ else:  # pragma: >=3.8 cover
 
 T = TypeVar("T")
 PydanticModelT = TypeVar("PydanticModelT", bound=_pydantic.BaseModel)
-PydanticValidator = classmethod
+PydanticValidator = Callable[..., Any]
 PydanticError = Union[_pydantic.ValidationError, SettingsError]
 
 
@@ -126,7 +126,7 @@ def model_with_validators(
 # Type inspection helpers
 # ---------------------------------------------------------------------------
 
-def _iter_candidate_annotations(tp: Any):
+def _iter_candidate_annotations(tp: Any) -> Iterator[Any]:
     """Yield non-None annotations from a (possibly union) annotation."""
     if tp is None:
         return

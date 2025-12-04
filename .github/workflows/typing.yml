@@ -28,6 +28,6 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install Dependencies
-        run: uv sync --frozen --group dev
+        run: uv sync --group dev
       - name: Run Type Checking
         run: uv run poe type

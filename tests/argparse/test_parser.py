@@ -23,7 +23,7 @@ import pydanticV2_argparse
 import tests.conftest as conf
 
 # Typing
-from typing import Deque, Dict, FrozenSet, List, Optional, Set, Tuple, Type, TypeVar
+from typing import Deque, Dict, FrozenSet, List, Optional, Set, Tuple, Type, TypeVar, Callable, cast
 
 # Version-Guarded
 if sys.version_info < (3, 8):  # pragma: <3.8 cover
@@ -54,7 +54,8 @@ def _annotation_is_model(annotation: object) -> bool:
 def _field_default(field: pydantic.fields.FieldInfo) -> object:
     """Return a field's default value, calling a default_factory when present."""
     if field.default_factory is not None:
-        return field.default_factory()
+        factory = cast(Callable[[], object], field.default_factory)
+        return factory()
     return field.default
 
 
@@ -220,20 +221,20 @@ def test_create_argparser(
         (Optional[conf.TestEnumSingle], conf.TestEnumSingle.D, "",          conf.TestEnumSingle.D),
 
         # Commands
-        (conf.TestCommand,            ..., "test",               conf.TestCommand()),                                     # type: ignore[call-arg]
-        (conf.TestCommands,           ..., "test cmd_01",        conf.TestCommands(cmd_01=conf.TestCommand())),           # type: ignore[call-arg]
-        (conf.TestCommands,           ..., "test cmd_02",        conf.TestCommands(cmd_02=conf.TestCommand())),           # type: ignore[call-arg]
-        (conf.TestCommands,           ..., "test cmd_03",        conf.TestCommands(cmd_03=conf.TestCommand())),           # type: ignore[call-arg]
-        (conf.TestCommands,           ..., "test cmd_01 --flag", conf.TestCommands(cmd_01=conf.TestCommand(flag=True))),  # type: ignore[call-arg]
-        (conf.TestCommands,           ..., "test cmd_02 --flag", conf.TestCommands(cmd_02=conf.TestCommand(flag=True))),  # type: ignore[call-arg]
-        (conf.TestCommands,           ..., "test cmd_03 --flag", conf.TestCommands(cmd_03=conf.TestCommand(flag=True))),  # type: ignore[call-arg]
-        (Optional[conf.TestCommand],  ..., "test",               conf.TestCommand()),                                     # type: ignore[call-arg]
-        (Optional[conf.TestCommands], ..., "test cmd_01",        conf.TestCommands(cmd_01=conf.TestCommand())),           # type: ignore[call-arg]
-        (Optional[conf.TestCommands], ..., "test cmd_02",        conf.TestCommands(cmd_02=conf.TestCommand())),           # type: ignore[call-arg]
-        (Optional[conf.TestCommands], ..., "test cmd_03",        conf.TestCommands(cmd_03=conf.TestCommand())),           # type: ignore[call-arg]
-        (Optional[conf.TestCommands], ..., "test cmd_01 --flag", conf.TestCommands(cmd_01=conf.TestCommand(flag=True))),  # type: ignore[call-arg]
-        (Optional[conf.TestCommands], ..., "test cmd_02 --flag", conf.TestCommands(cmd_02=conf.TestCommand(flag=True))),  # type: ignore[call-arg]
-        (Optional[conf.TestCommands], ..., "test cmd_03 --flag", conf.TestCommands(cmd_03=conf.TestCommand(flag=True))),  # type: ignore[call-arg]
+        (conf.TestCommand,            ..., "test",               conf.TestCommand()),
+        (conf.TestCommands,           ..., "test cmd_01",        conf.TestCommands(cmd_01=conf.TestCommand())),
+        (conf.TestCommands,           ..., "test cmd_02",        conf.TestCommands(cmd_02=conf.TestCommand())),
+        (conf.TestCommands,           ..., "test cmd_03",        conf.TestCommands(cmd_03=conf.TestCommand())),
+        (conf.TestCommands,           ..., "test cmd_01 --flag", conf.TestCommands(cmd_01=conf.TestCommand(flag=True))),
+        (conf.TestCommands,           ..., "test cmd_02 --flag", conf.TestCommands(cmd_02=conf.TestCommand(flag=True))),
+        (conf.TestCommands,           ..., "test cmd_03 --flag", conf.TestCommands(cmd_03=conf.TestCommand(flag=True))),
+        (Optional[conf.TestCommand],  ..., "test",               conf.TestCommand()),
+        (Optional[conf.TestCommands], ..., "test cmd_01",        conf.TestCommands(cmd_01=conf.TestCommand())),
+        (Optional[conf.TestCommands], ..., "test cmd_02",        conf.TestCommands(cmd_02=conf.TestCommand())),
+        (Optional[conf.TestCommands], ..., "test cmd_03",        conf.TestCommands(cmd_03=conf.TestCommand())),
+        (Optional[conf.TestCommands], ..., "test cmd_01 --flag", conf.TestCommands(cmd_01=conf.TestCommand(flag=True))),
+        (Optional[conf.TestCommands], ..., "test cmd_02 --flag", conf.TestCommands(cmd_02=conf.TestCommand(flag=True))),
+        (Optional[conf.TestCommands], ..., "test cmd_03 --flag", conf.TestCommands(cmd_03=conf.TestCommand(flag=True))),
     ],
 )
 def test_valid_arguments(
