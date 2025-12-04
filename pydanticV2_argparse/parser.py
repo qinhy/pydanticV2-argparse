@@ -21,7 +21,7 @@ import ast
 import collections.abc
 import enum
 import sys
-from types import NoneType
+NoneType = type(None)
 
 # Third-Party
 import pydantic
