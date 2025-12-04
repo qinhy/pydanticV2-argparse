@@ -109,6 +109,14 @@ warn_required_dynamic_aliases = true
 warn_untyped_fields = true
 
 [tool.poetry]
+name = "pydanticV2-argparse"
+version = "1.0.2"
+description = "Typed Argument Parsing with Pydantic"
+authors = [
+    "HUANGYI QIN <qinhunagyi@gmail.com>",
+    "Hayden Richards <SupImDos@gmail.com>",
+    "Anastas Stoyanovsky <contact@anastas.eu>",
+]
 packages = [
     { include = "pydanticV2_argparse" }
 ]

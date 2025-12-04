@@ -39,7 +39,10 @@ if sys.version_info < (3, 9):  # pragma: <3.9 cover
         elif argument.option_strings:
             return "/".join(argument.option_strings)
         elif argument.metavar not in (None, argparse.SUPPRESS):
-            return argument.metavar
+            metavar = argument.metavar
+            if isinstance(metavar, tuple):
+                return " ".join(str(part) for part in metavar)
+            return str(metavar)
         elif argument.dest not in (None, argparse.SUPPRESS):
             return argument.dest
         elif argument.choices:

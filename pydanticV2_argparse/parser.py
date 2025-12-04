@@ -21,7 +21,6 @@ import ast
 import collections.abc
 import enum
 import sys
-NoneType = type(None)
 
 # Third-Party
 import pydantic
@@ -37,6 +36,7 @@ from typing import Any, Callable, Dict, Generic, List, Literal, NoReturn, Option
 
 
 # Constants
+NoneType = type(None)
 PydanticModelT = TypeVar("PydanticModelT", bound=pydantic.BaseModel)
 
 def allows_none(field: Any) -> bool:

@@ -30,6 +30,7 @@ T = TypeVar("T")
 PydanticModelT = TypeVar("PydanticModelT", bound=_pydantic.BaseModel)
 PydanticValidator = Callable[..., Any]
 PydanticError = Union[_pydantic.ValidationError, SettingsError]
+_UNION_TYPE = getattr(_types, "UnionType", None)
 
 
 # ---------------------------------------------------------------------------
@@ -133,7 +134,7 @@ def _iter_candidate_annotations(tp: Any) -> Iterator[Any]:
 
     origin = get_origin(tp)
 
-    if origin is Union or origin is _types.UnionType:
+    if origin is Union or (_UNION_TYPE is not None and origin is _UNION_TYPE):
         for arg in get_args(tp):
             if arg is type(None):
                 continue
