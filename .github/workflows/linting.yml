@@ -30,7 +30,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install Dependencies
-        run: uv sync --frozen --group dev
+        run: uv sync --group dev
 
       - name: Run Linting
         run: uv run poe lint
