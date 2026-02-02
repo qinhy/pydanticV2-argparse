@@ -8,8 +8,6 @@ The public interface exposed by this package is the declarative and typed
 `ArgumentParser` class, as well as the package "dunder" metadata.
 """
 
-# Local
-
 # important! must do first
 from . import patches
 
