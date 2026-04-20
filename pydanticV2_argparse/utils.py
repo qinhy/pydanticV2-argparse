@@ -111,16 +111,16 @@ def update_validators(
 
 
 def model_with_validators(
-    model: type[PydanticModelT],
+    model: Type[PydanticModelT],
     validators: Dict[str, PydanticValidator],
-) -> type[PydanticModelT]:
+) -> Type[PydanticModelT]:
     """Generate a new pydantic model class with supplied validators."""
     new_model = _pydantic.create_model(
         model.__name__,
         __base__=model,
         __validators__=validators,
     )
-    return cast(type[PydanticModelT], new_model)
+    return cast(Type[PydanticModelT], new_model)
 
 
 # ---------------------------------------------------------------------------
