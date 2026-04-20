@@ -9,7 +9,7 @@ dynamic pydantic validators, and inspecting field types.
 import argparse
 import sys
 import types as _types
-from typing import Any, Callable, Dict, Iterator, Literal, Optional, Tuple, Type, TypeVar, Union
+from typing import Any, Callable, Dict, Iterator, Literal, Optional, Tuple, Type, TypeVar, Union, cast
 
 # Third-Party
 import pydantic as _pydantic
@@ -111,16 +111,16 @@ def update_validators(
 
 
 def model_with_validators(
-    model: Type[PydanticModelT],
+    model: type[PydanticModelT],
     validators: Dict[str, PydanticValidator],
-) -> Type[PydanticModelT]:
+) -> type[PydanticModelT]:
     """Generate a new pydantic model class with supplied validators."""
-    model = _pydantic.create_model(
+    new_model = _pydantic.create_model(
         model.__name__,
         __base__=model,
         __validators__=validators,
     )
-    return model
+    return cast(type[PydanticModelT], new_model)
 
 
 # ---------------------------------------------------------------------------
