@@ -1,5 +1,7 @@
 """Regression tests for conventional required CLI argument reporting."""
 
+from __future__ import annotations
+
 import argparse
 from typing import List
 
@@ -40,6 +42,7 @@ def test_missing_required_arguments(
 
     captured = capsys.readouterr()
     if exit_on_error:
+        assert isinstance(exc.value, SystemExit)
         assert exc.value.code == 2
         assert f"example: error: {message}" in captured.err
     else:
@@ -53,12 +56,15 @@ def test_required_arguments_usage() -> None:
     """Usage marks only optional values with brackets."""
     parser = ArgumentParser(RequiredArguments, prog="example")
     usage = parser.format_usage()
-    assert "--string STRING --integer INTEGER --flag | --no-flag" in usage
+    # Python 3.8's formatter shows only the first spelling of boolean options.
+    assert "--string STRING --integer INTEGER --flag" in " ".join(usage.split())
     assert "[--string" not in usage
     assert "[--integer" not in usage
     assert "[--flag" not in usage
     assert "[--second-flag]" in usage
-    assert "required arguments:" in parser.format_help()
+    help_message = parser.format_help()
+    assert "required arguments:" in help_message
+    assert "--flag, --no-flag" in help_message
 
 
 @pytest.mark.parametrize("flag", ["--flag", "--no-flag"])

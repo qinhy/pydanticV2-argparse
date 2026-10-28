@@ -87,7 +87,7 @@ def as_validator(
     """Wrap a caster and construct a validator for a given field."""
 
     @_pydantic.field_validator(field_name, mode="before")
-    def __validator(cls: Type[Any], value: T) -> Union[T, None, Any]:
+    def __validator(cls: Type[Any], value: T) -> Union[T, Any, None]:
         if not isinstance(value, str):
             return value
         if not value:
