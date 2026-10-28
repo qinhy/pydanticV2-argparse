@@ -105,5 +105,18 @@ $ python3 example.py --string hello --integer 42 --flag
 string='hello' integer=42 flag=True second_flag=False third_flag=True
 ```
 
+Required fields on a `BaseModel` must be supplied on the command line. Missing
+options use argparse's standard error message (and exit status 2):
+
+```console
+$ python3 example.py
+...
+Example Program: error: the following arguments are required: --string, --integer, --flag/--no-flag
+```
+
+For models derived from `pydantic_settings.BaseSettings`, required fields can also
+come from environment variables or other settings sources, so they are validated
+after command-line parsing.
+
 ## License
 This project is licensed under the terms of the MIT license.
